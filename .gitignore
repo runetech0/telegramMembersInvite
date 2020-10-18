@@ -1,0 +1,6 @@
+conf.ini
+tests*
+.vscode
+__py*
+MembersLists/*
+
