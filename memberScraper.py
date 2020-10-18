@@ -1,8 +1,10 @@
 from telethon.sync import TelegramClient
 from telethon.tl.functions.messages import GetDialogsRequest
+from telethon import errors
 from telethon.tl.types import InputPeerEmpty
 import csv
 import os
+import random
 import time
 import sys
 from datetime import datetime
@@ -23,11 +25,11 @@ class Scraper:
     async def scrape(self, target_group_name, **kwargs):
         chats = []
         result = await self.client(GetDialogsRequest(
-             offset_date=0,
-             offset_id=10,
-             offset_peer=InputPeerEmpty(),
-             limit=100,
-             hash = 0
+            offset_date=0,
+            offset_id=10,
+            offset_peer=InputPeerEmpty(),
+            limit=100,
+            hash=0
         ))
         chats.extend(result.chats)
         target_group = None
@@ -39,10 +41,17 @@ class Scraper:
             print('Could Not find the target group to scrape members ...')
             sys.exit(1)
         all_participants = []
+        print('Getting a list of all the members ...')
         all_participants = await self.client.get_participants(target_group, aggressive=True)
+        print(f'Got list of {len(all_participants)} members ...')
+        print('Starting to invite the members in a minute....')
+        time.sleep(60)
         for p in all_participants:
-            await self.client.send_message(p, self.message)
+            try:
+                await self.client.send_message(p, self.message)
+            except errors.rpcerrorlist.PeerFloodError:
+                print('Got a flood error!\nWaiting for a few seconds...')
+                time.sleep(random.randrange(300, 500))
+                continue
             print(f'Invite Count: {all_participants.index(p)}')
-            time.sleep(30)
-
-
+            time.sleep(random.randrange(15, 30))

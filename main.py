@@ -4,7 +4,7 @@ from telethon.tl.types import InputPeerEmpty
 from telethon.tl.types import InputPeerChat
 import telethon.errors as TelegramErrors
 import csv
-from inviter import Inviter
+# from inviter import Inviter
 import os
 from memberScraper import Scraper
 from configparser import ConfigParser
@@ -19,6 +19,7 @@ api_hash = conf['CONF']['API_HASH']
 phone = conf['CONF']['PHONE_NUMBER_IN_INTERNATIONAL_FORMAT']
 target_group_name = conf['CONF']['TARGET_GROUP_NAME']
 
+
 async def main():
     if not os.path.exists('./SessionFiles'):
         os.mkdir('./SessionFiles')
@@ -31,7 +32,7 @@ async def main():
         await client.sign_in(phone, input(f'Enter login/verificatoin code for {phone} : '))
     scraper = Scraper(client)
     await scraper.scrape(target_group_name)
-    
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
