@@ -1,39 +1,40 @@
 from telethon.sync import TelegramClient
-from telethon.tl.functions.messages import GetDialogsRequest
-from telethon.tl.types import InputPeerEmpty
-from telethon.tl.types import InputPeerChat
-import telethon.errors as TelegramErrors
-import csv
-# from inviter import Inviter
-import os
-from memberScraper import Scraper
 from configparser import ConfigParser
+from memberScraper import Scraper
+from threading import Lock
 import asyncio
+import time
+from random import randrange
+
+loop = asyncio.get_event_loop()
+config = ConfigParser()
+config.read('conf.ini')
 
 
-conf = ConfigParser()
-conf.read('conf.ini')
-
-api_id = conf['CONF']['API_ID']
-api_hash = conf['CONF']['API_HASH']
-phone = conf['CONF']['PHONE_NUMBER_IN_INTERNATIONAL_FORMAT']
-target_group_name = conf['CONF']['TARGET_GROUP_NAME']
-
-
-async def main():
-    if not os.path.exists('./SessionFiles'):
-        os.mkdir('./SessionFiles')
-        print(f'Using account : {phone}')
-        print(f'Target group name : {target_group_name}')
-    client = TelegramClient(f'./SessionFiles/{phone}', api_id, api_hash)
-    await client.connect()
-    if not await client.is_user_authorized():
-        await client.send_code_request(phone)
-        await client.sign_in(phone, input(f'Enter login/verificatoin code for {phone} : '))
-    scraper = Scraper(client)
+async def invite(k, v, lock):
+    PHONE = config[k]['PHONE_NUMBER_IN_INTERNATIONAL_FORMAT']
+    API_ID = config[k]['API_ID']
+    API_HASH = config[k]["API_HASH"]
+    target_group_name = config['CONF']['TARGET_GROUP_NAME']
+    cl = TelegramClient(PHONE, API_ID, API_HASH)
+    await cl.connect()
+    if not await cl.is_user_authorized():
+        await cl.send_code_request(PHONE)
+        await cl.sign_in(PHONE, input(f'Enter login/verificatoin code for {PHONE} : '))
+    scraper = Scraper(cl, lock, id=API_ID)
     await scraper.scrape(target_group_name)
 
 
-if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
+lock = Lock()
+for k, v in config.items():
+    if k == 'DEFAULT' or k == 'CONF':
+        continue
+    loop.create_task(invite(k, v, lock))
+    time.sleep(3)
+
+
+async def keepRunning():
+    while True:
+        await asyncio.sleep(10000)
+
+loop.run_forever()
